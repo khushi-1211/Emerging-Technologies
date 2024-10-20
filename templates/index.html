@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Literary Companion - AI Book Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .chat-container {
+        width: 90%;
+        max-width: 1000px;
+        height: 90vh;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .chat-header {
+        background: #2c3e50;
+        color: white;
+        padding: 20px;
+        text-align: center;
+        position: relative;
+      }
+
+      .chat-header h1 {
+        font-size: 1.5em;
+        margin-bottom: 5px;
+      }
+
+      .chat-header p {
+        font-size: 0.9em;
+        opacity: 0.8;
+      }
+
+      .chat-box {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        background: #f8f9fa;
+      }
+
+      .message {
+        margin: 15px 0;
+        max-width: 70%;
+        animation: fadeIn 0.5s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .user-message {
+        margin-left: auto;
+        background: #2c3e50;
+        color: white;
+        padding: 15px;
+        border-radius: 20px 20px 5px 20px;
+      }
+
+      .bot-message {
+        margin-right: auto;
+        background: white;
+        color: #2c3e50;
+        padding: 15px;
+        border-radius: 20px 20px 20px 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      .input-area {
+        padding: 20px;
+        background: white;
+        border-top: 1px solid #eee;
+        display: flex;
+        gap: 10px;
+      }
+
+      #user-input {
+        flex: 1;
+        padding: 15px;
+        border: 2px solid #eee;
+        border-radius: 25px;
+        outline: none;
+        transition: border-color 0.3s ease;
+        font-size: 1em;
+      }
+
+      #user-input:focus {
+        border-color: #2c3e50;
+      }
+
+      .send-button {
+        background: #2c3e50;
+        color: white;
+        border: none;
+        padding: 0 25px;
+        border-radius: 25px;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .send-button:hover {
+        transform: scale(1.05);
+      }
+
+      .send-button i {
+        font-size: 1.2em;
+      }
+
+      .typing-indicator {
+        display: none;
+        margin-left: 20px;
+        margin-bottom: 20px;
+      }
+
+      .typing-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        margin-right: 3px;
+        background: #2c3e50;
+        border-radius: 50%;
+        animation: typing 1.4s infinite;
+        opacity: 0.4;
+      }
+
+      .typing-dot:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .typing-dot:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+
+      @keyframes typing {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .chat-container {
+          width: 100%;
+          height: 100vh;
+          border-radius: 0;
+        }
+
+        .message {
+          max-width: 85%;
+        }
+      }
+
+      .suggestions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .suggestion-chip {
+        background: #e9ecef;
+        padding: 8px 15px;
+        border-radius: 15px;
+        font-size: 0.9em;
+        cursor: pointer;
+        transition: background 0.3s ease;
+      }
+
+      .suggestion-chip:hover {
+        background: #dee2e6;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chat-container">
+      <div class="chat-header">
+        <h1>Literary Companion</h1>
+        <p>Your AI Guide to Classic Literature</p>
+      </div>
+
+      <div class="chat-box" id="chat-box">
+        <!-- Messages will be added here -->
+      </div>
+
+      <div class="typing-indicator" id="typing-indicator">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+
+      <div class="input-area">
+        <input
+          type="text"
+          id="user-input"
+          placeholder="Ask me about any book..."
+        />
+        <button class="send-button" onclick="sendMessage()">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+
+    <script>
+      const suggestions = [
+        "Tell me about Pride and Prejudice",
+        "What happens in Moby Dick?",
+        "Who wrote Frankenstein?",
+        "What's Great Gatsby about?",
+      ];
+
+      function addMessage(text, isUser) {
+        const chatBox = document.getElementById("chat-box");
+        const messageDiv = document.createElement("div");
+        messageDiv.className = `message ${
+          isUser ? "user-message" : "bot-message"
+        }`;
+        messageDiv.textContent = text;
+        chatBox.appendChild(messageDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+
+      function addSuggestions() {
+        const chatBox = document.getElementById("chat-box");
+        const suggestionsDiv = document.createElement("div");
+        suggestionsDiv.className = "suggestions";
+
+        suggestions.forEach((suggestion) => {
+          const chip = document.createElement("div");
+          chip.className = "suggestion-chip";
+          chip.textContent = suggestion;
+          chip.onclick = () => {
+            document.getElementById("user-input").value = suggestion;
+            sendMessage();
+          };
+          suggestionsDiv.appendChild(chip);
+        });
+
+        chatBox.appendChild(suggestionsDiv);
+      }
+
+      function showTypingIndicator() {
+        document.getElementById("typing-indicator").style.display = "block";
+      }
+
+      function hideTypingIndicator() {
+        document.getElementById("typing-indicator").style.display = "none";
+      }
+
+      async function sendMessage() {
+        const input = document.getElementById("user-input");
+        const message = input.value.trim();
+
+        if (message) {
+          addMessage(message, true);
+          showTypingIndicator();
+
+          try {
+            const response = await fetch("/get_response", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ message: message }),
+            });
+
+            const data = await response.json();
+            hideTypingIndicator();
+            addMessage(data.response, false);
+          } catch (error) {
+            console.error("Error:", error);
+            hideTypingIndicator();
+            addMessage("Sorry, something went wrong. Please try again.", false);
+          }
+
+          input.value = "";
+        }
+      }
+
+      document
+        .getElementById("user-input")
+        .addEventListener("keypress", function (e) {
+          if (e.key === "Enter") {
+            sendMessage();
+          }
+        });
+
+      // Initial welcome message and suggestions
+      window.onload = function () {
+        addMessage(
+          "Welcome to Literary Companion! I'm your AI guide to classic literature. What would you like to know about?",
+          false
+        );
+        addSuggestions();
+      };
+    </script>
+  </body>
+</html>
